@@ -1,8 +1,23 @@
 import cv2
 import numpy as np
+from scipy.spatial.distance import cdist
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import glfw
+
+# 容错设置
+position_threshold = 30  # 最大位置偏差
+match_ratio = 0.8        # 最少匹配比例
+
+# 模板圆心的相对位置（行，列）
+template_positions = [
+    (0, 0),       # 第一行
+    (-1, -1), (1, -1),  # 第二行
+    (0, 0),       # 第三行
+    (-1, 1), (1, 1),    # 第四行
+    (0, 2)        # 第五行
+]
+template_positions = np.array(template_positions) * 50  # 转换到像素单位
 
 # 旋转角度
 rotation_angle = 0
@@ -22,7 +37,7 @@ def init_gl(width, height):
 def draw_cube(rotation_angle):
     """绘制一个缓慢旋转的 3D 立方体"""
     glPushMatrix()
-    glRotatef(rotation_angle, 20, 20, 0)  # 绕 Z 轴旋转
+    glRotatef(rotation_angle, 0, 1, 0)  # 绕 Y 轴旋转
 
     glBegin(GL_QUADS)
 
@@ -58,15 +73,20 @@ def draw_cube(rotation_angle):
     glPopMatrix()
 
 
-def check_pattern(detected_pattern):
-    """检查检测到的图案是否符合目标"""
-    target_pattern = [[0], [1, 1], [0], [1, 1], [0]]
-    #print("Detected Pattern:", detected_pattern)
-    #print("Target Pattern:", target_pattern)
-    if detected_pattern == target_pattern:
-        print("Pattern matched!")
-        return True
-    return False
+def detect_with_tolerance(detected_circles, template_positions):
+    """检测到的点是否与模板匹配"""
+    if len(detected_circles) == 0:
+        return False
+
+    # 计算每个检测到的点到模板点的距离
+    distances = cdist(detected_circles, template_positions)
+
+    # 判断每个模板点是否有对应的检测点
+    matched = np.any(distances < position_threshold, axis=0)
+
+    # 计算匹配比例
+    match_percentage = np.sum(matched) / len(template_positions)
+    return match_percentage >= match_ratio
 
 
 def detect_pattern(frame, gray):
@@ -92,34 +112,11 @@ def detect_pattern(frame, gray):
             if roi.size > 0:
                 avg_intensity = np.mean(roi)
                 color = "black" if avg_intensity < 128 else "white"
-                detected_centers.append((x, y, color))
+                if color == "black":  # 只检测黑色珠子
+                    detected_centers.append((x, y))
             cv2.circle(frame, (x, y), r, (0, 255, 0), 4)
             cv2.circle(frame, (x, y), 2, (0, 0, 255), 3)
-    return detected_centers
-
-
-def get_detected_pattern(detected_centers):
-    """生成检测到的图案矩阵"""
-    pattern = [[0], [0, 0], [0], [0, 0], [0]]
-    for (x, y, color) in detected_centers:
-        if y < 100:
-            if color == "black":
-                pattern[0][0] = 1
-        elif 100 <= y < 200:
-            if color == "black":
-                pattern[1][0] = 1
-                pattern[1][1] = 1
-        elif 200 <= y < 300:
-            if color == "black":
-                pattern[2][0] = 1
-        elif 300 <= y < 400:
-            if color == "black":
-                pattern[3][0] = 1
-                pattern[3][1] = 1
-        elif 400 <= y < 500:
-            if color == "black":
-                pattern[4][0] = 1
-    return pattern
+    return np.array(detected_centers)
 
 
 # 初始化 GLFW 和摄像头
@@ -147,9 +144,8 @@ while not glfw.window_should_close(window):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     detected_centers = detect_pattern(frame, gray)
-    detected_pattern = get_detected_pattern(detected_centers)
 
-    if check_pattern(detected_pattern):
+    if detect_with_tolerance(detected_centers, template_positions):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0)
