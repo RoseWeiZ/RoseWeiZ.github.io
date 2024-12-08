@@ -22,7 +22,7 @@ def init_gl(width, height):
 def draw_cube(rotation_angle):
     """绘制一个缓慢旋转的 3D 立方体"""
     glPushMatrix()
-    glRotatef(rotation_angle, 0, 0, 1)  # 绕 Z 轴旋转
+    glRotatef(rotation_angle, 20, 20, 0)  # 绕 Z 轴旋转
 
     glBegin(GL_QUADS)
 
@@ -61,8 +61,8 @@ def draw_cube(rotation_angle):
 def check_pattern(detected_pattern):
     """检查检测到的图案是否符合目标"""
     target_pattern = [[0], [1, 1], [0], [1, 1], [0]]
-    print("Detected Pattern:", detected_pattern)
-    print("Target Pattern:", target_pattern)
+    #print("Detected Pattern:", detected_pattern)
+    #print("Target Pattern:", target_pattern)
     if detected_pattern == target_pattern:
         print("Pattern matched!")
         return True
@@ -78,7 +78,7 @@ def detect_pattern(frame, gray):
         cv2.HOUGH_GRADIENT,
         dp=1,
         minDist=20,
-        param1=50,
+        param1=20,
         param2=30,
         minRadius=10,
         maxRadius=50
