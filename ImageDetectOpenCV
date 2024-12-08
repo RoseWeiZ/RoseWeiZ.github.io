@@ -30,21 +30,25 @@ def init_gl(width, height):
 
 
 def draw_model(rotation_angle):
-    """绘制导入的 3D 模型"""
+    """绘制导入的 3D 模型，并设置自定义颜色"""
     glPushMatrix()
     glRotatef(rotation_angle, 0, 1, 0)  # 绕 Y 轴旋转
-    glRotatef(rotation_angle * 0.5, 1, 0, 0)  # 略微绕 X 轴旋转
+    glRotatef(rotation_angle * 0.5, 1, 0, 0)  # 稍微绕 X 轴旋转
     glScalef(0.05, 0.05, 0.05)  # 调整模型缩放比例
 
+    # 设置模型颜色为蓝色 (R=0, G=0, B=1)
+    glColor3f(0.0, 0.0, 1.0)
+
     glBegin(GL_TRIANGLES)
-    for mesh in model.mesh_list:  # 遍历模型中的所有网格
-        for face in mesh.faces:  # 获取每个面（面由顶点索引组成）
-            for vertex_index in face:
-                vertex = model.vertices[vertex_index]  # 从全局顶点列表中获取顶点
+    for mesh in model.mesh_list:  # 遍历模型中的每个网格
+        for face in mesh.faces:  # 遍历网格中的每个面
+            for vertex_i in face:  # 遍历面的每个顶点索引
+                vertex = model.vertices[vertex_i]  # 获取顶点坐标
                 glVertex3f(*vertex)  # 设置顶点
     glEnd()
 
     glPopMatrix()
+
 
 
 def check_pattern(detected_pattern):
@@ -63,7 +67,7 @@ def detect_pattern(frame, gray):
         blurred,
         cv2.HOUGH_GRADIENT,
         dp=1,
-        minDist=15,
+        minDist=30,
         param1=20,
         param2=25,
         minRadius=10,
