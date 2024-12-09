@@ -32,6 +32,28 @@ def init_gl(width, height):
     gluPerspective(45, width / height, 0.1, 100.0)
     glMatrixMode(GL_MODELVIEW)
 
+    # 添加光照初始化部分
+    glEnable(GL_LIGHTING)  # 启用光照
+    glEnable(GL_LIGHT0)  # 启用第一个光源
+    glEnable(GL_COLOR_MATERIAL)  # 使颜色材质属性生效
+
+    # 设置光源属性
+    light_position = [5.0, 5.0, 5.0, 1.0]  # 光源位置
+    light_ambient = [0.2, 0.2, 0.2, 1.0]  # 环境光
+    light_diffuse = [0.8, 0.8, 0.8, 1.0]  # 漫反射光
+    light_specular = [1.0, 1.0, 1.0, 1.0]  # 镜面反射光
+
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient)
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular)
+
+    # 设置材质属性
+    mat_specular = [1.0, 1.0, 1.0, 1.0]  # 镜面反射属性
+    mat_shininess = [50.0]  # 高光系数
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular)
+    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess)
+
 
 def draw_model(model, rotation_angle):
     """绘制导入的 3D 模型，并设置自定义颜色"""
@@ -39,9 +61,6 @@ def draw_model(model, rotation_angle):
     glRotatef(rotation_angle, 0, 1, 0)  # 绕 Y 轴旋转
     glRotatef(rotation_angle * 0.5, 1, 0, 0)  # 稍微绕 X 轴旋转
     glScalef(0.05, 0.05, 0.05)  # 调整模型缩放比例
-
-    # 设置模型颜色为蓝色 (R=0, G=0, B=1)
-    #glColor3f(0.0, 0.0, 1.0)
 
     glBegin(GL_TRIANGLES)
     for mesh in model.mesh_list:  # 遍历模型中的每个网格
@@ -92,7 +111,7 @@ def detect_pattern(frame, gray):
             roi = gray[y - r:y + r, x - r:x + r]
             if roi.size > 0:
                 avg_intensity = np.mean(roi)
-                color = "black" if avg_intensity < 128 else "white"
+                color = "black" if avg_intensity < 100 else "white"
                 detected_centers.append((x, y, color))
                 
                 # 绘制检测到的圆形和中心点
