@@ -15,7 +15,8 @@ except Exception as e:
     exit()
 
 # 旋转角度
-rotation_angle = 0
+rotation_angle_x = 0  # 绕 XY 轴的旋转角度
+rotation_angle_yz = 0  # 绕 YZ 轴的旋转角度
 
 
 def init_gl(width, height):
@@ -29,11 +30,13 @@ def init_gl(width, height):
     glMatrixMode(GL_MODELVIEW)
 
 
-def draw_model(rotation_angle):
+def draw_model(rotation_angle_x, rotation_angle_yz):
     """绘制导入的 3D 模型，并设置自定义颜色"""
     glPushMatrix()
-    glRotatef(rotation_angle, 0, 1, 0)  # 绕 Y 轴旋转
-    glRotatef(rotation_angle * 0.5, 1, 0, 0)  # 稍微绕 X 轴旋转
+
+    # 根据模式控制旋转
+    glRotatef(rotation_angle_x, 0, 1, 0)  # 绕 Y 轴旋转（顺时针）
+    glRotatef(rotation_angle_yz, 1, 0, 0)  # 绕 X 轴旋转（逆时针）
     glScalef(0.05, 0.05, 0.05)  # 调整模型缩放比例
 
     # 设置模型颜色为蓝色 (R=0, G=0, B=1)
@@ -52,11 +55,16 @@ def draw_model(rotation_angle):
 
 def check_pattern(detected_pattern):
     """检查检测到的图案是否符合目标"""
-    target_pattern = [1, 0, 0, 1, 0, 1, 1, ]
-    if detected_pattern == target_pattern:
-        print("Pattern matched!")
-        return True
-    return False
+    pattern1 = [1, 0, 0, 1, 0, 1, 1]
+    pattern2 = [0, 1, 1, 0, 1, 1, 0]
+
+    if detected_pattern == pattern1:
+        print("Pattern 1 matched!")
+        return 1  # pattern1: 顺时针旋转
+    elif detected_pattern == pattern2:
+        print("Pattern 2 matched!")
+        return 2  # pattern2: 逆时针旋转
+    return 0
 
 
 def detect_pattern(frame, gray):
@@ -81,11 +89,11 @@ def detect_pattern(frame, gray):
                 avg_intensity = np.mean(roi)
                 color = "black" if avg_intensity < 128 else "white"
                 detected_centers.append((x, y, color))
-                
+
                 # 绘制检测到的圆形和中心点
                 cv2.circle(frame, (x, y), r, (0, 255, 0), 4)
                 cv2.circle(frame, (x, y), 2, (0, 0, 255), 3)
-                
+
                 # 在每个珠子旁边显示颜色信息
                 cv2.putText(
                     frame,
@@ -135,7 +143,7 @@ init_gl(width, height)
 
 cap = cv2.VideoCapture(0)
 
-global rotation_angle
+global rotation_angle_x, rotation_angle_yz
 
 while not glfw.window_should_close(window):
     ret, frame = cap.read()
@@ -161,12 +169,22 @@ while not glfw.window_should_close(window):
         cv2.LINE_AA                   # 抗锯齿
     )
 
-    if check_pattern(detected_pattern):
+    pattern_type = check_pattern(detected_pattern)
+    
+    if pattern_type == 1:  # 顺时针旋转
+        rotation_angle_x += 1
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0)
-        draw_model(rotation_angle)  # 替换为绘制模型函数
-        rotation_angle += 1  # 增加旋转角度
+        draw_model(rotation_angle_x, rotation_angle_yz)
+        glfw.swap_buffers(window)
+
+    elif pattern_type == 2:  # 逆时针旋转
+        rotation_angle_yz -= 1
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glLoadIdentity()
+        gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0)
+        draw_model(rotation_angle_x, rotation_angle_yz)
         glfw.swap_buffers(window)
 
     # 显示处理后的帧
