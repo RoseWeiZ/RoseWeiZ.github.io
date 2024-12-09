@@ -8,7 +8,7 @@ import pywavefront  # 用于加载 OBJ 模型
 # 加载自定义模型
 try:
     model = pywavefront.Wavefront(
-        'C:/Users/DR.RLW/Desktop/study/UAL/Year 2/Unit 5/star2.obj', collect_faces=True
+        'C:/Users/DR.RLW/Desktop/study/UAL/Year 3/Image_Recognition/Model/Lowpoly_tree_sample.obj', collect_faces=True
     )  # 替换为你的模型路径
 except Exception as e:
     print(f"模型加载失败: {e}")
@@ -52,7 +52,7 @@ def draw_model(rotation_angle):
 
 def check_pattern(detected_pattern):
     """检查检测到的图案是否符合目标"""
-    target_pattern = [[0], [1, 1], [0], [1, 1], [0]]
+    target_pattern = [1, 0, 0, 1, 0, 1, 1, ]
     if detected_pattern == target_pattern:
         print("Pattern matched!")
         return True
@@ -69,8 +69,8 @@ def detect_pattern(frame, gray):
         minDist=30,
         param1=20,
         param2=25,
-        minRadius=10,
-        maxRadius=50
+        minRadius=30,
+        maxRadius=60
     )
     detected_centers = []
     if circles is not None:
@@ -82,37 +82,41 @@ def detect_pattern(frame, gray):
                 color = "black" if avg_intensity < 128 else "white"
                 detected_centers.append((x, y, color))
                 
-                # 在图像中标出颜色
-                color_text = "Black" if color == "black" else "White"
-                cv2.putText(frame, color_text, (x - 10, y - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                # 绘制检测到的圆形和中心点
+                cv2.circle(frame, (x, y), r, (0, 255, 0), 4)
+                cv2.circle(frame, (x, y), 2, (0, 0, 255), 3)
                 
-            cv2.circle(frame, (x, y), r, (0, 255, 0), 4)
-            cv2.circle(frame, (x, y), 2, (0, 0, 255), 3)
+                # 在每个珠子旁边显示颜色信息
+                cv2.putText(
+                    frame,
+                    color,  # 显示的颜色文本
+                    (x + 10, y - 10),  # 显示位置，相对于圆心
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (255, 255, 255),  # 白色字体
+                    2,  # 字体粗细
+                    cv2.LINE_AA
+                )
     return detected_centers
 
 
 def get_detected_pattern(detected_centers):
     """生成检测到的图案矩阵"""
-    pattern = [[0], [0, 0], [0], [0, 0], [0]]
+    pattern = []
+    # 基于珠子的位置来判断其模式
+    detected_centers.sort(key=lambda x: x[1])  # 按 y 坐标排序，确保从上到下处理
     for (x, y, color) in detected_centers:
-        if y < 100:
-            if color == "black":
-                pattern[0][0] = 1
-        elif 100 <= y < 200:
-            if color == "black":
-                pattern[1][0] = 1
-                pattern[1][1] = 1
-        elif 200 <= y < 300:
-            if color == "black":
-                pattern[2][0] = 1
-        elif 300 <= y < 400:
-            if color == "black":
-                pattern[3][0] = 1
-                pattern[3][1] = 1
-        elif 400 <= y < 500:
-            if color == "black":
-                pattern[4][0] = 1
+        # 假设珠子在 y 坐标中排列的高度是根据某个模板
+        if 50 <= y < 150:  # 第一行
+            pattern.append(1 if color == "black" else 0)
+        elif 150 <= y < 250:  # 第二行
+            pattern.append(1 if color == "black" else 0)
+        elif 250 <= y < 350:  # 第三行
+            pattern.append(1 if color == "black" else 0)
+        elif 350 <= y < 450:  # 第四行
+            pattern.append(1 if color == "black" else 0)
+        elif 450 <= y < 550:  # 第五行
+            pattern.append(1 if color == "black" else 0)
     return pattern
 
 
@@ -142,6 +146,21 @@ while not glfw.window_should_close(window):
     detected_centers = detect_pattern(frame, gray)
     detected_pattern = get_detected_pattern(detected_centers)
 
+    # 转换 detected_pattern 为字符串
+    pattern_str = "".join(str(cell) for cell in detected_pattern)
+
+    # 在画面上添加文字
+    cv2.putText(
+        frame,                        # 图像
+        f"Detected Pattern: {pattern_str}",  # 显示内容
+        (10, 30),                     # 起始位置 (x, y)
+        cv2.FONT_HERSHEY_SIMPLEX,     # 字体
+        0.7,                          # 字体大小
+        (255, 255, 255),              # 字体颜色 (白色)
+        2,                            # 字体粗细
+        cv2.LINE_AA                   # 抗锯齿
+    )
+
     if check_pattern(detected_pattern):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
@@ -150,8 +169,8 @@ while not glfw.window_should_close(window):
         rotation_angle += 1  # 增加旋转角度
         glfw.swap_buffers(window)
 
-    flipped_frame = cv2.flip(frame, 1)
-    cv2.imshow('Flipped Frame', flipped_frame)
+    # 显示处理后的帧
+    cv2.imshow('Flipped Frame', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
