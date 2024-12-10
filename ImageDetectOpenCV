@@ -11,7 +11,7 @@ try:
         'C:/Users/DR.RLW/Desktop/study/UAL/Year 3/Image_Recognition/Model/Lowpoly_tree_sample.obj', collect_faces=True
     )  # 模型1路径
     model2 = pywavefront.Wavefront(
-        'C:/Users/DR.RLW/Desktop/study/UAL/Year 3/Image_Recognition/Model/Star3.obj', collect_faces=True
+        'C:/Users/DR.RLW/Desktop/study/UAL/Year 3/Image_Recognition/Model/Wolf.obj', collect_faces=True
     )  # 模型2路径
 except Exception as e:
     print(f"模型加载失败: {e}")
@@ -38,7 +38,7 @@ def init_gl(width, height):
     glEnable(GL_COLOR_MATERIAL)  # 使颜色材质属性生效
 
     # 设置光源属性
-    light_position = [5.0, 5.0, 5.0, 1.0]  # 光源位置
+    light_position = [5.0, 5.0, -4.5, 1.0]  # 光源位置
     light_ambient = [0.2, 0.2, 0.2, 1.0]  # 环境光
     light_diffuse = [0.8, 0.8, 0.8, 1.0]  # 漫反射光
     light_specular = [1.0, 1.0, 1.0, 1.0]  # 镜面反射光
@@ -58,9 +58,14 @@ def init_gl(width, height):
 def draw_model(model, rotation_angle):
     """绘制导入的 3D 模型，并设置自定义颜色"""
     glPushMatrix()
+    glTranslatef(0.0, -1.0, 0.0)
     glRotatef(rotation_angle, 0, 1, 0)  # 绕 Y 轴旋转
     glRotatef(rotation_angle * 0.5, 1, 0, 0)  # 稍微绕 X 轴旋转
-    glScalef(0.05, 0.05, 0.05)  # 调整模型缩放比例
+
+    if model == model1:
+        glScalef(0.1, 0.1, 0.1)  # 调整模型缩放比例
+    else:
+        glScalef(0.01, 0.01, 0.01)  # 调整模型缩放比例
 
     glBegin(GL_TRIANGLES)
     for mesh in model.mesh_list:  # 遍历模型中的每个网格
@@ -156,7 +161,7 @@ def get_detected_pattern(detected_centers):
 if not glfw.init():
     raise Exception("GLFW initialization failed")
 
-width, height = 640, 480
+width, height = 1280, 960
 window = glfw.create_window(width, height, "3D Rotating Model", None, None)
 if not window:
     glfw.terminate()
