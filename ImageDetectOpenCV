@@ -3,27 +3,26 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import glfw
-import pywavefront  # 用于加载 OBJ 模型
-
-# 加载自定义模型
+import pywavefront  # Used to load .obj model
+# Loading models
 try:
     model1 = pywavefront.Wavefront(
         'C:/Users/DR.RLW/Desktop/study/UAL/Year 3/Image_Recognition/Model/Lowpoly_tree_sample.obj', collect_faces=True
-    )  # 模型1路径
+    )  # model 1
     model2 = pywavefront.Wavefront(
         'C:/Users/DR.RLW/Desktop/study/UAL/Year 3/Image_Recognition/Model/Wolf.obj', collect_faces=True
-    )  # 模型2路径
+    )  # model 2
 except Exception as e:
-    print(f"模型加载失败: {e}")
+    print(f"Failed to loas the model: {e}") # if the model cannot be load, then automatically exit the program
     exit()
 
-# 旋转角度
+# set the initial Rotation angle and the initial model (which is none)
 rotation_angle = 0
-model_displayed = None  # 当前显示的模型
+model_displayed = None  # model_displayed shows the current model
 
 
 def init_gl(width, height):
-    """初始化 OpenGL 环境"""
+    """Initialize OpenGL"""
     glClearColor(0.0, 0.0, 0.0, 1.0)
     glEnable(GL_DEPTH_TEST)
     glViewport(0, 0, width, height)
@@ -32,54 +31,53 @@ def init_gl(width, height):
     gluPerspective(45, width / height, 0.1, 100.0)
     glMatrixMode(GL_MODELVIEW)
 
-    # 添加光照初始化部分
-    glEnable(GL_LIGHTING)  # 启用光照
-    glEnable(GL_LIGHT0)  # 启用第一个光源
-    glEnable(GL_COLOR_MATERIAL)  # 使颜色材质属性生效
+    # Light
+    glEnable(GL_LIGHTING)  # enable light source
+    glEnable(GL_LIGHT0)  # enable first light source
+    glEnable(GL_COLOR_MATERIAL)  # active materials & color
 
-    # 设置光源属性
-    light_position = [5.0, 5.0, -4.5, 1.0]  # 光源位置
-    light_ambient = [0.2, 0.2, 0.2, 1.0]  # 环境光
-    light_diffuse = [0.8, 0.8, 0.8, 1.0]  # 漫反射光
-    light_specular = [1.0, 1.0, 1.0, 1.0]  # 镜面反射光
+    # light configuration
+    light_position = [5.0, 5.0, -4.5, 1.0] 
+    light_ambient = [0.2, 0.2, 0.2, 1.0]  
+    light_diffuse = [0.8, 0.8, 0.8, 1.0]  
+    light_specular = [1.0, 1.0, 1.0, 1.0]  
 
     glLightfv(GL_LIGHT0, GL_POSITION, light_position)
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient)
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse)
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular)
 
-    # 设置材质属性
-    mat_specular = [1.0, 1.0, 1.0, 1.0]  # 镜面反射属性
-    mat_shininess = [50.0]  # 高光系数
+    # material configuration
+    mat_specular = [1.0, 1.0, 1.0, 1.0]  # reflection
+    mat_shininess = [50.0]  # highlight
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular)
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess)
 
-
+# the function used to draw 3d models
 def draw_model(model, rotation_angle):
-    """绘制导入的 3D 模型，并设置自定义颜色"""
+    """Drawing the models and importing the color"""
     glPushMatrix()
     glTranslatef(0.0, -1.0, 0.0)
-    glRotatef(rotation_angle, 0, 1, 0)  # 绕 Y 轴旋转
-    glRotatef(rotation_angle * 0.5, 1, 0, 0)  # 稍微绕 X 轴旋转
+    glRotatef(rotation_angle, 0, 1, 0)  # rotation Y
+    glRotatef(rotation_angle * 0.5, 1, 0, 0)  # rotation X
 
     if model == model1:
-        glScalef(0.1, 0.1, 0.1)  # 调整模型缩放比例
+        glScalef(0.1, 0.1, 0.1)  # adjust the size if the model is model 1
     else:
-        glScalef(0.01, 0.01, 0.01)  # 调整模型缩放比例
+        glScalef(0.01, 0.01, 0.01)  # adjust the size if the model is model 2
 
-    glBegin(GL_TRIANGLES)
-    for mesh in model.mesh_list:  # 遍历模型中的每个网格
-        for face in mesh.faces:  # 遍历网格中的每个面
-            for vertex_i in face:  # 遍历面的每个顶点索引
-                vertex = model.vertices[vertex_i]  # 获取顶点坐标
-                glVertex3f(*vertex)  # 设置顶点
+    glBegin(GL_TRIANGLES) #constructed the models through vertexes, meshes, faces...
+    for mesh in model.mesh_list:  
+        for face in mesh.faces:  
+            for vertex_i in face:  
+                vertex = model.vertices[vertex_i]  # get the coordinates of each vertex
+                glVertex3f(*vertex)  # set the vertex
     glEnd()
 
     glPopMatrix()
 
-
 def check_pattern(detected_pattern):
-    """检查检测到的图案是否符合目标"""
+    """Check if the pattern match with the database"""
     target_pattern1 = [1, 0, 0, 1, 0, 1, 1]
     target_pattern2 = [0, 1, 1, 0, 1, 1, 0]
     pattern_left = [0, 1, 0, 0, 1, 1, 0]
@@ -97,7 +95,7 @@ def check_pattern(detected_pattern):
 
 
 def detect_pattern(frame, gray):
-    """检测图案并返回中心点和颜色"""
+    """detect the pattern and return the central point"""
     blurred = cv2.GaussianBlur(gray, (9, 9), 2)
     circles = cv2.HoughCircles(
         blurred,
@@ -119,45 +117,45 @@ def detect_pattern(frame, gray):
                 color = "black" if avg_intensity < 100 else "white"
                 detected_centers.append((x, y, color))
                 
-                # 绘制检测到的圆形和中心点
+                # Draw circles and center point for better visualization to see whether the pattern is detected or not
                 cv2.circle(frame, (x, y), r, (0, 255, 0), 4)
                 cv2.circle(frame, (x, y), 2, (0, 0, 255), 3)
                 
-                # 在每个珠子旁边显示颜色信息
+                # Display the color of the beads for the programmer to adjust parameters to ensure more accurate detection
                 cv2.putText(
                     frame,
-                    color,  # 显示的颜色文本
-                    (x + 10, y - 10),  # 显示位置，相对于圆心
+                    color,  # color of the text
+                    (x + 10, y - 10),  
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.7,
-                    (255, 255, 255),  # 白色字体
-                    2,  # 字体粗细
+                    (255, 255, 255),  
+                    2,  # weight of the font
                     cv2.LINE_AA
                 )
     return detected_centers
 
 
 def get_detected_pattern(detected_centers):
-    """生成检测到的图案矩阵"""
+    """generate the matrix of the detected pattern"""
     pattern = []
-    # 基于珠子的位置来判断其模式
-    detected_centers.sort(key=lambda x: x[1])  # 按 y 坐标排序，确保从上到下处理
+    
+    detected_centers.sort(key=lambda x: x[1])  # Sorted by the y coordinate,make sure that it is processed from top to the bottom
     for (x, y, color) in detected_centers:
-        # 假设珠子在 y 坐标中排列的高度是根据某个模板
-        if 50 <= y < 150:  # 第一行
+       
+        if 50 <= y < 150:  # first row
             pattern.append(1 if color == "black" else 0)
-        elif 150 <= y < 250:  # 第二行
+        elif 150 <= y < 250:  # second row
             pattern.append(1 if color == "black" else 0)
-        elif 250 <= y < 350:  # 第三行
+        elif 250 <= y < 350:  # third row
             pattern.append(1 if color == "black" else 0)
-        elif 350 <= y < 450:  # 第四行
+        elif 350 <= y < 450:  # fourth row
             pattern.append(1 if color == "black" else 0)
-        elif 450 <= y < 550:  # 第五行
+        elif 450 <= y < 550:  # fifth row
             pattern.append(1 if color == "black" else 0)
     return pattern
 
 
-# 初始化 GLFW 和摄像头
+# initialize GLFW and camera
 if not glfw.init():
     raise Exception("GLFW initialization failed")
 
@@ -183,50 +181,50 @@ while not glfw.window_should_close(window):
     detected_centers = detect_pattern(frame, gray)
     detected_pattern = get_detected_pattern(detected_centers)
 
-    # 转换 detected_pattern 为字符串
+    # turn detected_pattern to string 
     pattern_str = "".join(str(cell) for cell in detected_pattern)
 
-    # 在画面上添加文字
+    # Add text on top of the picture
     cv2.putText(
-        frame,                        # 图像
-        f"Detected Pattern: {pattern_str}",  # 显示内容
-        (10, 30),                     # 起始位置 (x, y)
-        cv2.FONT_HERSHEY_SIMPLEX,     # 字体
-        0.7,                          # 字体大小
-        (255, 255, 255),              # 字体颜色 (白色)
-        2,                            # 字体粗细
-        cv2.LINE_AA                   # 抗锯齿
+        frame,                        # the detected picture
+        f"Detected Pattern: {pattern_str}",  # text being displayed
+        (10, 30),                     # starting position (x, y)
+        cv2.FONT_HERSHEY_SIMPLEX,     # font
+        0.7,                          # size of the font
+        (255, 255, 255),              # color of the font
+        2,                            # weight of the font
+        cv2.LINE_AA                   # Anti-aliasing
     )
 
-    # 检查图案并控制模型显示和旋转
+    # detect the pattern and control the model
     pattern_type = check_pattern(detected_pattern)
     if pattern_type == "pattern1":
         if model_displayed != "model1":
             model_displayed = "model1"
-            rotation_angle = 0  # 重置旋转角度
+            rotation_angle = 0  # reset the rotation angle when initializing a new model
     elif pattern_type == "pattern2":
         if model_displayed != "model2":
             model_displayed = "model2"
-            rotation_angle = 0  # 重置旋转角度
+            rotation_angle = 0  
     elif pattern_type == "left":
-        rotation_angle -= 1  # 左旋转
+        rotation_angle -= 1  # -1 is turn left
     elif pattern_type == "right":
-        rotation_angle += 1  # 右旋转
+        rotation_angle += 1  # and this is turn right
 
     if model_displayed == "model1":
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0)
-        draw_model(model1, rotation_angle)  # 绘制模型1
+        draw_model(model1, rotation_angle)  # draw model 1
         glfw.swap_buffers(window)
     elif model_displayed == "model2":
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0)
-        draw_model(model2, rotation_angle)  # 绘制模型2
+        draw_model(model2, rotation_angle)  # model 2
         glfw.swap_buffers(window)
 
-    # 显示处理后的帧
+    # display the mirrored frame because the camera used in testing is the front camera, which is automatically mirrored when displayed. 
     cv2.imshow('Flipped Frame', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
