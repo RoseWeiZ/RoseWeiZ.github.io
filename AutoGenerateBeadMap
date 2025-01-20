@@ -1,0 +1,47 @@
+!pip install svgwrite
+import svgwrite
+print("svgwrite successfully installed！")
+
+
+def generate_pattern(output_path, canvas_size=500, circle_diameter=20, colors=("black", "white")):
+    """
+    
+
+    Args:
+        output_path (str): path for the output svg
+        canvas_size (int): size of the ca
+        circle_diameter (int): diameter
+        colors (tuple): colors used to fill the circles
+    """
+    # initialize SVG canvas
+    dwg = svgwrite.Drawing(output_path, size=(canvas_size, canvas_size))
+    
+    # radius of the circle
+    radius = circle_diameter / 2
+    # rows and diameter
+    rows = canvas_size // circle_diameter
+    cols = canvas_size // circle_diameter
+
+    # generate pattern
+    for row in range(rows):
+        for col in range(cols):
+            # where the center locates
+            x = col * circle_diameter + radius
+            y = row * circle_diameter + radius
+
+           
+            if row % 2 == 1:
+                x += radius
+
+            
+            color = colors[(row + col) % 2]
+
+            
+            dwg.add(dwg.circle(center=(x, y), r=radius, fill=color))
+
+    
+    dwg.save()
+    print(f"图案已生成并保存至 {output_path}")
+
+
+generate_pattern("pattern.svg", canvas_size=500, circle_diameter=40, colors=("black", "white"))
