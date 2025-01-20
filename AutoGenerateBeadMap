@@ -41,7 +41,7 @@ def generate_pattern(output_path, canvas_size=500, circle_diameter=20, colors=("
 
     
     dwg.save()
-    print(f"图案已生成并保存至 {output_path}")
+    print(f"Pattern is generated and stored in {output_path}")
 
 
 generate_pattern("pattern.svg", canvas_size=500, circle_diameter=40, colors=("black", "white"))
